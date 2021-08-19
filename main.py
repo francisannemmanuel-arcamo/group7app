@@ -263,12 +263,12 @@ class Tracker:
         else:
             for prod in prods:
                 try:
-                    if count > 0 and count % 2 == 0:
-                        row += 1
                     c.execute("SELECT price, MAX(date_modified) AS date_modified, store_code FROM PRODUCT_PRICE "
                               "WHERE prod_code=? GROUP BY store_code", (prod[0],))
                     pr = c.fetchall()
                     for p in pr:
+                        if count > 0 and count % 2 == 0:
+                            row += 1
                         f_pd = Frame(res_frame, highlightthickness=1, height=150, width=210, bg="white",
                                      highlightbackground="#1db954")
                         f_pd.propagate(0)
@@ -482,13 +482,13 @@ class Tracker:
                       font=("Roboto", 9, "bold"), bg="white", fg="#1db954").place(x=10, y=60, height=20)
 
                 Button(f_sp, text="Update Details", font=("Roboto", 9, "bold"), bg="#1db954", relief=GROOVE,
-                       activebackground="#1db954", command=lambda: self.f_up_details(pr[0], f, sid))\
+                       activebackground="#1db954", command=lambda x=pr[0], y=f, z=sid: self.f_up_details(x, y, z))\
                     .place(x=304, y=6, height=32, width=100)
                 Button(f_sp, text="Update Price", font=("Roboto", 9, "bold"), bg="#1db954", relief=GROOVE,
-                       activebackground="#1db954", command=lambda: self.f_up_price(pr[0], f, sid))\
+                       activebackground="#1db954", command=lambda x=pr[0], y=f, z=sid: self.f_up_price(x, y, z))\
                     .place(x=304, y=44, height=32, width=100)
                 Button(f_sp, text="Delete Product", font=("Roboto", 9, "bold"), bg="#1db954", relief=GROOVE,
-                       activebackground="#1db954", command=lambda: self.delete_prod(pr[0], f, sid))\
+                       activebackground="#1db954", command=lambda x=pr[0], y=f, z=sid: self.delete_prod(x, y, z))\
                     .place(x=304, y=82, height=32, width=100)
 
                 row += 1
@@ -604,7 +604,6 @@ class Tracker:
     def f_up_store(self, sid):
         c.execute("SELECT store_name, store_add FROM STORE WHERE store_code=?", (sid,))
         store = c.fetchone()
-        print(store)
         usw = 420
         ush = 350
         f_ups = Toplevel()
