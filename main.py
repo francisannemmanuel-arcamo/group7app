@@ -21,11 +21,7 @@ c.execute("CREATE TABLE IF NOT EXISTS STORE("
 c.execute("CREATE TABLE IF NOT EXISTS PRODUCTS("
           "     prod_code VARCHAR(10) NOT NULL,"
           "     prodd_name VARCHAR(30) NOT NULL, "
-          "     store_code VARCHAR(10) NOT NULL,"
-          "     PRIMARY KEY(prod_code),"
-          "     FOREIGN KEY (store_code) REFERENCES STORE(store_code)"
-          "         ON UPDATE CASCADE"
-          "         ON DELETE CASCADE"
+          "     PRIMARY KEY(prod_code)"
           ")")
 c.execute("CREATE TABLE IF NOT EXISTS PRODUCT_PRICE("
           "     store_code	VARCHAR(10) NOT NULL,"
@@ -56,9 +52,88 @@ def exit_app(app):
         return
 
 
-def price_hist(sid, pid):
-    c.execute("SELECT price, date_modified FROM PRODUCT_PRICE WHERE store_code=? AND prod_code=?", (sid, pid))
-    return c.fetchall()
+def prod_view(pid, sid):
+    def display_price_history():
+        f_dph = Toplevel()
+        f_dph.title("Price History of " + pname)
+        dphw = 350
+        dphh = 290
+        f_dph.config(bg="white")
+        f_dph.resizable(False, False)
+        f_dph.geometry("{}x{}+{}+{}".format(dphw, dphh, int((scw - dphw) / 2), int((scy - 60 - dphh) / 2)))
+        f_dph.grab_set()
+
+        f_table = Frame(f_dph)
+        f_table.place(x=0, y=0, height=dphh, width=dphw)
+        t_ph = ttk.Treeview(f_table, columns=("price", "date"))
+        dphy = Scrollbar(f_table, orient=VERTICAL, command=t_ph.yview)
+        dphy.pack(side=RIGHT, fill=Y)
+        t_ph.configure(yscrollcommand=dphy.set)
+        t_ph.heading("price", text="PRICE")
+        t_ph.heading("date", text="DATE MODIFIED")
+        t_ph['show'] = 'headings'
+        t_ph.column("price", width=100, anchor="center")
+        t_ph.column("date", width=240, anchor='center')
+        t_ph.pack(fill=BOTH, expand=1)
+
+        bg = ttk.Style()
+        bg.theme_use("clam")
+        bg.configure('Treeview', bd=2)
+        bg.configure('Treeview.Heading', background="#1db954", foreground="black", font=("Roboto", 12, "bold"), bd=2)
+
+        c.execute("SELECT price, date_modified FROM PRODUCT_PRICE WHERE store_code=? AND prod_code=?", (sid, pid))
+        ph = c.fetchall()
+        t_ph.delete(*t_ph.get_children())
+        for hp in ph:
+            date = datetime.strptime(hp[1], '%Y-%m-%d %H:%M:%S.%f')
+            t_ph.insert('', 0, values=(("Php " + "{:.2f}".format(round(hp[0], 2))),
+                                       date.strftime('%I:%M %p - %a, %b %d %Y')))
+
+    c.execute("SELECT prodd_name FROM PRODUCTS WHERE prod_code=?", (pid,))
+    pname = c.fetchone()[0]
+    f_prod = Toplevel()
+    f_prod.config(bg="#0c0c0c")
+    f_prod.title("Product Details of " + pname)
+    psw = 420
+    psh = 300
+    f_prod.geometry("{}x{}+{}+{}".format(psw, psh, int((scw - psw) / 2), int((scy - 60 - psh) / 2)))
+    f_prod.resizable(False, False)
+    f_prod.grab_set()
+
+    i_name = PhotoImage(file=r"images/spprod.png").subsample(2, 2)
+    i_categ = PhotoImage(file=r"images/spcateg.png").subsample(2, 2)
+    i_price = PhotoImage(file=r"images/spprice.png").subsample(2, 2)
+    i_sname = PhotoImage(file=r"images/spstore.png").subsample(2, 2)
+    i_sloc = PhotoImage(file=r"images/sploc.png").subsample(2, 2)
+
+    name = Label(f_prod, text=("    " + pname), font=("Roboto", 13, "bold"), fg="#1db954", bg="#0c0c0c",
+                 image=i_name, anchor="sw", compound="left")
+    name.img = i_name
+    name.place(x=10, y=30, height=40)
+    pcateg = categ_prod(pid)
+    categ = Label(f_prod, text=("    " + ", ".join(str(x.strip()) for x in pcateg)), font=("Roboto", 10, "bold"),
+                  fg="white", bg="#0c0c0c", image=i_categ, anchor="sw", compound="left")
+    categ.img = i_categ
+    categ.place(x=10, y=75, height=40)
+    c.execute("SELECT price, MAX(date_modified) AS date_modified FROM PRODUCT_PRICE WHERE prod_code=? AND "
+              "store_code=?", (pid, sid))
+    price = Label(f_prod, text=("    Php " + "{:.2f}".format(round(c.fetchone()[0], 2))), compound="left",
+                  font=("Roboto", 12, "bold"), fg="#EC9D46", bg="#0c0c0c", image=i_price, anchor="sw")
+    price.img = i_price
+    price.place(x=10, y=120, height=40)
+    c.execute("SELECT * FROM STORE WHERE store_code=?", (sid,))
+    st = c.fetchone()
+    store = Label(f_prod, text=("    " + st[1]), font=("Roboto", 12, "bold"), fg="#CF97A2", bg="#0c0c0c",
+                  image=i_sname, anchor="sw", compound="left")
+    store.img = i_sname
+    store.place(x=10, y=165, height=40)
+    loc = Label(f_prod, text=("    " + st[2]), font=("Roboto", 12, "bold"), fg="#1db954", bg="#0c0c0c", image=i_sloc,
+                anchor="sw", compound="left")
+    loc.img = i_sloc
+    loc.place(x=10, y=210, height=40)
+    Button(f_prod, text="View Price History", font=("Roboto", 10, "bold"), command=display_price_history,
+           fg="black", bg="#1db954", activebackground="black", activeforeground="white")\
+        .place(x=260, y=265, height=25, width=150)
 
 
 def categ_prod(pid):
@@ -84,7 +159,6 @@ class Tracker:
 
         self.s_name = StringVar()
 
-        self.p_code = StringVar()
         self.p_name = StringVar()
         self.p_price = DoubleVar()
 
@@ -93,6 +167,7 @@ class Tracker:
 
         home_img = PhotoImage(file=r"images/home.png")
         store_img = PhotoImage(file=r"images/store.png")
+        prod_img = PhotoImage(file=r"images/product.png")
         bsearch_img = PhotoImage(file=r"images/blacksearch.png")
         self.loc_img = PhotoImage(file=r"images/loc.png").subsample(2, 2)
 
@@ -108,7 +183,11 @@ class Tracker:
         storebtn = Button(f_nav, command=self.store, relief=FLAT, image=store_img, anchor="center",
                           bg="#1DB954", activebackground="#1DB954")
         storebtn.img = store_img
-        storebtn.place(x=440, y=0, height=40, width=40)
+        storebtn.place(x=400, y=0, height=40, width=40)
+        prodbtn = Button(f_nav, command=self.add_product, relief=FLAT, image=prod_img, anchor="center",
+                         bg="#1DB954", activebackground="#1DB954")
+        prodbtn.img = prod_img
+        prodbtn.place(x=440, y=0, height=40, width=40)
 
         self.home()
 
@@ -133,7 +212,7 @@ class Tracker:
         e_prod.bind('<FocusIn>', lambda event: self.prod_search.set(""))
         e_prod.bind('<Return>', lambda event: self.search_frame())
         e_prod.place(x=50, y=340, height=40, width=380)
-        b_srch = Button(self.f_home, relief=FLAT, command=lambda: self.search_frame, image=gsearch_img,
+        b_srch = Button(self.f_home, relief=FLAT, command=lambda: self.search_frame(), image=gsearch_img,
                         anchor="center", bg="#1DB954", activebackground="#1DB954")
         b_srch.img = gsearch_img
         b_srch.place(x=388, y=342, width=40, height=36)
@@ -168,12 +247,13 @@ class Tracker:
         Label(self.f_search, text=self.prod_search.get(), font=("Roboto", 12, "bold"), bg="#D9D6D8",
               fg="#1DB954", anchor="sw").place(x=155, y=0, height=35, width=290)
 
-        c.execute("SELECT * FROM PRODUCTS WHERE prodd_name LIKE ?", ('%' + self.prod_search.get() + '%',))
+        c.execute("SELECT prod_code FROM PRODUCTS WHERE prodd_name LIKE ?", ('%' + self.prod_search.get() + '%',))
         prods = c.fetchall()
         for frame in res_frame.winfo_children():
             frame.destroy()
         count = 0
         row = 0
+
         if not prods:
             nopfr = Frame(res_frame, width=450, height=540)
             nopfr.propagate(0)
@@ -182,116 +262,44 @@ class Tracker:
                 .place(x=0, y=0, height=440, width=430)
         else:
             for prod in prods:
-                if count > 0 and count % 2 == 0:
-                    row += 1
-                f_pd = Frame(res_frame, highlightthickness=1, height=150, width=210, bg="white",
-                             highlightbackground="#1db954")
-                f_pd.propagate(0)
-                f_pd.grid(row=row, column=count % 2, padx=3, pady=(5, 0))
-                pname = Label(f_pd, text=prod[1], font=("Roboto", 14, "bold"), bg="white", anchor="center")
-                pname.place(x=5, y=5, height=40, width=190)
-                c.execute("SELECT price, MAX(date_modified) AS date_modified FROM PRODUCT_PRICE WHERE prod_code=? AND "
-                          "store_code=?", (prod[0], prod[2]))
-                pprice = Label(f_pd, text=("Php " + "{:.2f}".format(round(c.fetchone()[0], 2))), anchor="sw",
-                               font=("Roboto", 10, "bold"), bg="white", fg="orange")
-                pprice.place(x=5, y=65, height=40, width=190)
-                c.execute("SELECT store_name FROM STORE WHERE store_code=?", (prod[2],))
-                det_store = c.fetchone()
-                store = Label(f_pd, image=self.loc_img, text=(" " + det_store[0]), font=("Roboto", 8, "bold"),
-                              bg="white", anchor="se", compound="left")
-                store.img = self.loc_img
-                store.place(x=5, y=125, height=20, width=190)
-                f_pd.bind('<Double-1>', lambda event, a=prod: self.prod_view(a))
-                pname.bind('<Double-1>', lambda event, a=prod: self.prod_view(a))
-                pprice.bind('<Double-1>', lambda event, a=prod: self.prod_view(a))
-                store.bind('<Double-1>', lambda event, a=prod: self.prod_view(a))
-                count += 1
-
-    def prod_view(self, prod):
-        f_prod = Toplevel()
-        f_prod.config(bg="#1db954")
-        f_prod.title("Product Details of " + prod[1])
-        psw = 350
-        psh = 290
-        f_prod.geometry("{}x{}+{}+{}".format(psw, psh, int((scw - psw) / 2), int((scy - 60 - psh) / 2)))
-        f_prod.resizable(False, False)
-        f_prod.grab_set()
-        
-        i_code = PhotoImage(file=r"images/spcode.png").subsample(2, 2)
-        i_name = PhotoImage(file=r"images/spprod.png").subsample(2, 2)
-        i_categ = PhotoImage(file=r"images/spcateg.png").subsample(2, 2)
-        i_price = PhotoImage(file=r"images/spprice.png").subsample(2, 2)
-        i_sname = PhotoImage(file=r"images/spstore.png").subsample(2, 2)
-        i_sloc = PhotoImage(file=r"images/sploc.png").subsample(2, 2)
-    
-        code = Label(f_prod, text=("   " + prod[0]), font=("Roboto", 12, "bold"), fg="white", bg="#1db954",
-                     image=i_code, anchor="sw", compound="left")
-        code.img = i_code
-        code.place(x=10, y=30, height=30)
-        name = Label(f_prod, text=("   " + prod[1]), font=("Roboto", 12, "bold"), fg="white", bg="#1db954",
-                     image=i_name, anchor="sw", compound="left")
-        name.img = i_name
-        name.place(x=10, y=65, height=30)
-        pcateg = categ_prod(prod[0])
-        categ = Label(f_prod, text=("    " + ", ".join(str(x.strip()) for x in pcateg)), font=("Roboto", 10, "bold"),
-                      fg="white", bg="#1db954", image=i_categ, anchor="sw", compound="left")
-        categ.img = i_categ
-        categ.place(x=10, y=100, height=30)
-        c.execute("SELECT price, MAX(date_modified) AS date_modified FROM PRODUCT_PRICE WHERE prod_code=? AND "
-                  "store_code=?", (prod[0], prod[2]))
-        price = Label(f_prod, text=("   Php " + "{:.2f}".format(round(c.fetchone()[0], 2))), compound="left",
-                      font=("Roboto", 12, "bold"), fg="white", bg="#1db954", image=i_price, anchor="sw")
-        price.img = i_price
-        price.place(x=10, y=135, height=30)
-        c.execute("SELECT * FROM STORE WHERE store_code=?", (prod[2],))
-        st = c.fetchone()
-        store = Label(f_prod, text=("    " + st[1]), font=("Roboto", 10, "bold"), fg="white", bg="#1db954",
-                      image=i_sname, anchor="sw", compound="left")
-        store.img = i_sname
-        store.place(x=10, y=170, height=30)
-        loc = Label(f_prod, text=("    " + st[2]), font=("Roboto", 10, "bold"), fg="white", bg="#1db954", image=i_sloc,
-                    anchor="sw", compound="left")
-        loc.img = i_sloc
-        loc.place(x=10, y=205, height=30)
-        ph = price_hist(prod[2], prod[0])
-        Button(f_prod, text="View Price History", font=("Roboto", 10, "bold"), fg="white", bg="black",
-               activebackground="black", activeforeground="white", command=lambda:
-               self.display_price_history(prod[1], ph))\
-            .place(x=190, y=255, height=25, width=150)
-
-    def display_price_history(self, name, pc):
-        f_dph = Toplevel()
-        f_dph.title("Price History of " + name)
-        dphw = 350
-        dphh = 290
-        f_dph.config(bg="white")
-        f_dph.resizable(False, False)
-        f_dph.geometry("{}x{}+{}+{}".format(dphw, dphh, int((scw - dphw) / 2), int((scy - 60 - dphh) / 2)))
-        f_dph.grab_set()
-
-        f_table = Frame(f_dph)
-        f_table.place(x=0, y=0, height=dphh, width=dphw)
-        t_ph = ttk.Treeview(f_table, columns=("price", "date"))
-        dphy = Scrollbar(f_table, orient=VERTICAL, command=t_ph.yview)
-        dphy.pack(side=RIGHT, fill=Y)
-        t_ph.configure(yscrollcommand=dphy.set)
-        t_ph.heading("price", text="PRICE")
-        t_ph.heading("date", text="DATE MODIFIED")
-        t_ph['show'] = 'headings'
-        t_ph.column("price", width=100, anchor="center")
-        t_ph.column("date", width=240, anchor='center')
-        t_ph.pack(fill=BOTH, expand=1)
-
-        bg = ttk.Style()
-        bg.theme_use("clam")
-        bg.configure('Treeview', bd=2)
-        bg.configure('Treeview.Heading', background="#1db954", foreground="black", font=("Roboto", 12, "bold"), bd=2)
-
-        t_ph.delete(*t_ph.get_children())
-        for hp in pc:
-            date = datetime.strptime(hp[1], '%Y-%m-%d %H:%M:%S.%f')
-            t_ph.insert('', 0, values=(("Php " + "{:.2f}".format(round(hp[0], 2))),
-                                       date.strftime('%I:%M %p - %a, %b %d %Y')))
+                try:
+                    if count > 0 and count % 2 == 0:
+                        row += 1
+                    c.execute("SELECT price, MAX(date_modified) AS date_modified, store_code FROM PRODUCT_PRICE "
+                              "WHERE prod_code=? GROUP BY store_code", (prod[0],))
+                    pr = c.fetchall()
+                    for p in pr:
+                        f_pd = Frame(res_frame, highlightthickness=1, height=150, width=210, bg="white",
+                                     highlightbackground="#1db954")
+                        f_pd.propagate(0)
+                        pprice = Label(f_pd, text=("Php " + "{:.2f}".format(round(p[0], 2))), anchor="sw",
+                                       font=("Roboto", 10, "bold"), bg="white", fg="orange")
+                        pprice.place(x=15, y=65, height=40, width=180)
+                        f_pd.grid(row=row, column=count % 2, padx=3, pady=(5, 0))
+                        c.execute("SELECT prodd_name FROM PRODUCTS WHERE prod_code=?", (prod[0],))
+                        name = c.fetchone()[0]
+                        pname = Label(f_pd, text=name, font=("Roboto", 14, "bold"), bg="white", anchor="center")
+                        pname.place(x=5, y=5, height=40, width=190)
+                        c.execute("SELECT store_name FROM STORE WHERE store_code=?", (p[2],))
+                        det_store = c.fetchone()
+                        store = Label(f_pd, image=self.loc_img, text=(" " + det_store[0]), font=("Roboto", 8, "bold"),
+                                      bg="white", anchor="se", compound="left")
+                        store.img = self.loc_img
+                        store.place(x=5, y=125, height=20, width=190)
+                        f_pd.bind('<Double-1>', lambda event, a=prod[0], b=p[2]: prod_view(a, b))
+                        pname.bind('<Double-1>', lambda event, a=prod[0], b=p[2]: prod_view(a, b))
+                        pprice.bind('<Double-1>', lambda event, a=prod[0], b=p[2]: prod_view(a, b))
+                        store.bind('<Double-1>', lambda event, a=prod[0], b=p[2]: prod_view(a, b))
+                        count += 1
+                except TypeError:
+                    continue
+            if count == 0:
+                nores = Frame(res_frame)
+                nores.configure(width=450, height=540)
+                nores.propagate(0)
+                nores.grid(row=0, column=0)
+                Label(nores, text="No Results", font=("Gotham Medium", 24, "bold"), fg="#1DB954") \
+                    .place(x=0, y=0, height=440, width=430)
 
     # STORE INTERFACE METHODS
 
@@ -356,16 +364,13 @@ class Tracker:
             messagebox.showerror("Error", "Please fill out all the necessary information.")
         else:
             if messagebox.askyesno("Add Store", "Confirm adding store?"):
-                try:
-                    c.execute("INSERT INTO STORE VALUES(?, ?, ?)",
-                              (''.join(random.choices(string.ascii_uppercase + string.digits, k=6)),
-                               self.s_name.get(), add))
-                    conn.commit()
-                    messagebox.showinfo("Success", "Store added to database!")
-                    frame.destroy()
-                    self.display_store()
-                except sqlite3.IntegrityError:
-                    messagebox.showerror("Error", "Store already in database!")
+                c.execute("INSERT INTO STORE VALUES(?, ?, ?)",
+                          (''.join(random.choices(string.ascii_uppercase + string.digits, k=6)),
+                           self.s_name.get(), add))
+                conn.commit()
+                messagebox.showinfo("Success", "Store added to database!")
+                frame.destroy()
+                self.display_store()
 
     # METHOD FOR LIST OF STORES
 
@@ -406,106 +411,22 @@ class Tracker:
                             image=self.loc_img, compound="left", fg="#1db954")
                 loc.img = self.loc_img
                 loc.place(x=5, y=65, height=20)
-                Button(s_frame, text="ADD PRODUCT", font=("Roboto", 8, "bold"), relief=GROOVE,
+                Button(s_frame, text="SET PRICES", font=("Roboto", 8, "bold"), relief=GROOVE,
                        fg="black", activeforeground="black", bg="#1DB954", activebackground="#1DB954",
-                       command=lambda x=store[0]: self.add_product(x)).place(x=325, y=5, width=100, height=25)
-                Button(s_frame, text="VIEW PRODUCTS", font=("Roboto", 8, "bold"), relief=GROOVE,
+                       command=lambda x=store[0]: self.view_prod_frame(x)).place(x=325, y=5, width=100, height=25)
+                Button(s_frame, text="UPDATE DETAILS", font=("Roboto", 8, "bold"), relief=GROOVE,
                        fg="black", activeforeground="black", bg="#1DB954", activebackground="#1DB954",
-                       command=lambda x=store[0]: self.view_prod_frame(x)).place(x=325, y=35, width=100, height=25)
+                       command=lambda x=store[0]: self.f_up_store(x)).place(x=325, y=35, width=100, height=25)
                 Button(s_frame, text="DELETE STORE", font=("Roboto", 8, "bold"), relief=GROOVE,
                        fg="black", activeforeground="black", bg="#1DB954", activebackground="#1DB954",
                        command=lambda x=store[0]: self.delete_store(x)).place(x=325, y=65, width=100, height=25)
                 row += 1
 
-    # METHOD FOR ADD PRODUCT BUTTON FOR EACH STORE
+    # METHODS FOR SET PRICES BUTTON
 
-    def add_product(self, storeid):
-        w_add_prod = Toplevel()
-        w_add_prod.title("Add Product!")
-        apw = 400
-        aph = 400
-        w_add_prod.config(bg="#0c0c0c")
-        w_add_prod.geometry("{}x{}+{}+{}".format(apw, aph, int((scw - apw) / 2), int((scy - 60 - aph) / 2)))
-        w_add_prod.resizable(False, False)
-        w_add_prod.grab_set()
-        self.p_code.set("Enter product code")
-        self.p_name.set("Enter product name")
-
-        Label(w_add_prod, text="Add Product", bg="#0C0C0C", fg="#1DB954", font=("Gotham Medium", 18, "bold")) \
-            .place(x=5, y=15, height=35, width=410)
-        Label(w_add_prod, text="Code: ", font=("Gotham Medium", 14, "bold"), anchor="center",
-              bg="#1DB954", fg="#0C0C0C").place(x=10, y=85, height=25, width=80)
-        pdcode = Entry(w_add_prod, textvariable=self.p_code, highlightcolor="#1DB954", highlightbackground="#1DB954",
-                       font=("Roboto", 11, "bold"))
-        pdcode.place(x=90, y=85, height=25, width=300)
-        pdcode.bind('<FocusIn>', lambda event, x="1": self.pd_focusin(x))
-        pdcode.bind('<FocusOut>', lambda event, x="1": self.pd_focusout(x))
-        Label(w_add_prod, text="Name: ", font=("Gotham Medium", 14, "bold"), anchor="center",
-              bg="#1DB954", fg="#0C0C0C").place(x=10, y=125, height=25, width=80)
-        pdname = Entry(w_add_prod, textvariable=self.p_name, highlightcolor="#1DB954", highlightbackground="#1DB954",
-                       font=("Roboto", 11, "bold"))
-        pdname.bind('<FocusIn>', lambda event, x="2": self.pd_focusin(x))
-        pdname.bind('<FocusOut>', lambda event, x="2": self.pd_focusout(x))
-        pdname.place(x=90, y=125, height=25, width=300)
-        Label(w_add_prod, text="Price: ", font=("Gotham Medium", 14, "bold"), anchor="center",
-              bg="#1DB954", fg="#0C0C0C").place(x=10, y=160, height=25, width=80)
-        pdprice = Entry(w_add_prod, textvariable=self.p_price, highlightcolor="#1DB954", highlightbackground="#1DB954",
-                        font=("Roboto", 11, "bold"))
-        pdprice.place(x=90, y=160, height=25, width=150)
-        Label(w_add_prod, text="Category: ", font=("Gotham Medium", 14, "bold"), anchor="center",
-              bg="#1DB954", fg="#0C0C0C").place(x=10, y=195, height=25, width=120)
-        Label(w_add_prod, text="(Please separate each category using comma)", font=("Roboto", 8), fg="#1db954",
-              bg="#0c0c0c", anchor="center").place(x=135, y=195, height=25)
-        pdcateg = Text(w_add_prod, font=("Roboto", 11, "bold"))
-        pdcateg.place(x=10, y=230, height=120, width=380)
-
-        pdcateg.insert(END, "Enter product category")
-        pdcateg.bind('<FocusIn>', lambda event, y=pdcateg.get(1.0, END).replace("\n", ""):
-                     pdcateg.delete(1.0, END) if y == "Enter product category" else "")
-
-        Button(w_add_prod, text="CONFIRM", font=("Roboto", 12, "bold"),
-               command=lambda: self.add_pd(storeid, pdcateg.get(1.0, END).replace("\n", ""), w_add_prod)) \
-            .place(x=220, y=360, width=80, height=30)
-        Button(w_add_prod, text="CLEAR", font=("Roboto", 12, "bold"),
-               command=lambda: [self.p_code.set("Enter product code"), self.p_name.set("Enter product name"),
-                                self.p_price.set(0), pdcateg.delete(1.0, END)])\
-            .place(x=310, y=360, width=80, height=30)
-
-    def add_pd(self, sid, categ, frame):
-        if self.p_code.get() == "" or self.p_name.get() == "" or categ == "" or \
-                self.p_code.get() == "Enter product code" or self.p_name.get() == "Enter product name":
-            messagebox.showerror("Error", "Please provide all the necessary information!")
-            return
-        else:
-            ctgs = categ.split(",")
-            try:
-                if self.p_price.get() > 0:
-                    if messagebox.askyesno("Add Product", "Are you sure you want to add the product?"):
-                        try:
-                            c.execute("INSERT INTO PRODUCTS VALUES(?, ?, ?)", (self.p_code.get(), self.p_name.get(),
-                                                                               sid))
-                            for ctg in ctgs:
-                                c.execute("INSERT INTO PROD_CATEGORY VALUES(?, ?)", (self.p_code.get(), ctg.strip()))
-                            c.execute("INSERT INTO PRODUCT_PRICE VALUES(?, ?, ?, ?)",
-                                      (sid, self.p_code.get(), self.p_price.get(), datetime.now()))
-                            conn.commit()
-                            messagebox.showinfo("Success", "Product added to database")
-                            self.pd_focusout("all")
-                            frame.destroy()
-                            return
-                        except sqlite3.IntegrityError:
-                            messagebox.showerror("Product code already in database!")
-                else:
-                    messagebox.showerror("Error", "Provide valid price!")
-            except TclError:
-                messagebox.showerror("Error", "Provide valid price!")
-
-    # METHODS FOR VIEW PRODUCTS BUTTON
-
-    def view_prod_frame(self, storeid):
-        c.execute("SELECT Store_Name FROM STORE WHERE store_code=?", (storeid,))
+    def view_prod_frame(self, sid):
         f_view = Toplevel()
-        f_view.title("Products of " + c.fetchone()[0])
+        f_view.title("Products")
         vpw = 450
         vph = 600
         f_view.resizable(False, False)
@@ -519,8 +440,8 @@ class Tracker:
         search = Label(f_view, image=bsearch_img, bg="black", anchor="center")
         search.img = bsearch_img
         search.place(x=410, y=15, width=30, height=30)
-        self.vp_search.trace("w", lambda name, index, mode, sv=self.vp_search: self.show_prod(f_view, storeid))
-        self.show_prod(f_view, storeid)
+        self.vp_search.trace("w", lambda name, index, mode, sv=self.vp_search: self.show_prod(f_view, sid))
+        self.show_prod(f_view, sid)
 
     def show_prod(self, f, sid):
         f_vp = Frame(f)
@@ -536,10 +457,9 @@ class Tracker:
         c_vp.create_window((0, 0), window=fr_vp, anchor="nw")
 
         if self.vp_search.get() == "":
-            c.execute("SELECT * FROM PRODUCTS WHERE store_code=?", (sid,))
+            c.execute("SELECT * FROM PRODUCTS")
         else:
-            c.execute("SELECT * FROM PRODUCTS WHERE store_code=? AND prodd_name LIKE ?",
-                      (sid, '%' + self.vp_search.get() + '%',))
+            c.execute("SELECT * FROM PRODUCTS WHERE prodd_name LIKE ?", ('%' + self.vp_search.get() + '%',))
         prods = c.fetchall()
         row = 0
 
@@ -560,23 +480,20 @@ class Tracker:
                 sp_categ = categ_prod(pr[0])
                 Label(f_sp, text=", ".join(str(x.strip()) for x in sp_categ), anchor='sw',
                       font=("Roboto", 9, "bold"), bg="white", fg="#1db954").place(x=10, y=60, height=20)
-                c.execute("SELECT price, MAX(date_modified) AS date_modified FROM PRODUCT_PRICE WHERE prod_code=? AND "
-                          "store_code=?", (pr[0], sid))
-                Label(f_sp, text=("Php " + "{:.2f}".format(round(c.fetchone()[0], 2))), anchor='sw',
-                      font=("Roboto", 11, "bold"), bg="white", fg="red").place(x=10, y=80, height=30)
+
                 Button(f_sp, text="Update Details", font=("Roboto", 9, "bold"), bg="#1db954", relief=GROOVE,
-                       activebackground="#1db954", command=lambda p=pr[0], fr=f, s=sid: self.f_up_details(p, fr, s))\
+                       activebackground="#1db954", command=lambda: self.f_up_details(pr[0], f, sid))\
                     .place(x=304, y=6, height=32, width=100)
                 Button(f_sp, text="Update Price", font=("Roboto", 9, "bold"), bg="#1db954", relief=GROOVE,
-                       activebackground="#1db954", command=lambda p=pr[0], fr=f, s=sid: self.f_up_price(p, fr, s))\
+                       activebackground="#1db954", command=lambda: self.f_up_price(pr[0], f, sid))\
                     .place(x=304, y=44, height=32, width=100)
                 Button(f_sp, text="Delete Product", font=("Roboto", 9, "bold"), bg="#1db954", relief=GROOVE,
-                       activebackground="#1db954", command=lambda p=pr[0], fr=f, s=sid: self.delete_prod(p, fr, s))\
+                       activebackground="#1db954", command=lambda: self.delete_prod(pr[0], f, sid))\
                     .place(x=304, y=82, height=32, width=100)
 
                 row += 1
 
-    # METHOD FOR UPDATE DETAILS BUTTON
+    # METHOD FOR UPDATE PRODUCT DETAILS BUTTON
 
     def f_up_details(self, pid, f, sid):
         c.execute("SELECT prodd_name FROM PRODUCTS WHERE prod_code=?", (pid,))
@@ -625,14 +542,14 @@ class Tracker:
                 for ctg in ctgs:
                     c.execute("INSERT INTO PROD_CATEGORY VALUES(?, ?)", (pid, ctg.strip()))
                 conn.commit()
-                self.pd_focusout("1")
+                self.pd_focusout()
                 top.destroy()
                 self.show_prod(f, sid)
                 messagebox.showinfo("Success", ("Details of " + name + " has been updated!"))
 
     # METHOD FOR UPDATE PRICE BUTTON
 
-    def f_up_price(self, pid, f, sid):
+    def f_up_price(self, pid, fr, stid):
         c.execute("SELECT prodd_name FROM PRODUCTS WHERE prod_code=?", (pid,))
         f_up_pr = Toplevel()
         f_up_pr.title("Update Price of " + c.fetchone()[0])
@@ -649,7 +566,7 @@ class Tracker:
                         font=("Roboto", 12, "bold"))
         pdprice.place(x=90, y=20, height=25, width=150)
         Button(f_up_pr, text="CONFIRM", font=("Roboto", 12, "bold"),
-               command=lambda: self.update_price(pid, sid, f, f_up_pr))\
+               command=lambda: self.update_price(pid, stid, fr, f_up_pr))\
             .place(x=160, y=70, width=80, height=30)
 
     def update_price(self, p, s, pf, top):
@@ -676,12 +593,61 @@ class Tracker:
     def delete_prod(self, pid, f, sid):
         if messagebox.askyesno("Delete Product", "Confirm deleting product?"):
             c.execute("DELETE FROM PRODUCTS WHERE prod_code=?", (pid,))
-            conn.commit()
-            c.execute("DELETE FROM PROD_CATEGORY WHERE prod_code=?", (pid,))
             c.execute("DELETE FROM PRODUCT_PRICE WHERE prod_code=?", (pid,))
+            c.execute("DELETE FROM PROD_CATEGORY WHERE prod_code=?", (pid,))
             conn.commit()
             self.show_prod(f, sid)
             messagebox.showinfo("Success", "Product deleted in database.")
+
+    # METHOD FOR UPDATE STORE DETAILS
+
+    def f_up_store(self, sid):
+        c.execute("SELECT store_name, store_add FROM STORE WHERE store_code=?", (sid,))
+        store = c.fetchone()
+        print(store)
+        usw = 420
+        ush = 350
+        f_ups = Toplevel()
+        f_ups.title("Update Store Details of " + store[0])
+        f_ups.geometry("{}x{}+{}+{}".format(usw, ush, int((scw - usw) / 2), int((scy - 60 - ush) / 2)))
+        f_ups.grab_set()
+        f_ups.resizable(False, False)
+        f_ups.config(bg="#0c0c0c")
+        self.s_name.set(store[0])
+
+        Label(f_ups, text="UPDATE STORE", font=("Gotham Medium", 20, "bold"), anchor="center", fg="#1DB954",
+              bg="#0C0C0C").place(x=5, y=15, height=35, width=410)
+        Label(f_ups, text="NAME: ", font=("Gotham Medium", 13, "bold"), bg="#1DB954",
+              anchor="center", fg="#0C0C0C").place(x=10, y=80, height=25)
+        Entry(f_ups, font=("Roboto", 11, "bold"), textvariable=self.s_name).place(x=10, y=115, height=25, width=400)
+        Label(f_ups, text="ADDRESS:", font=("Gotham Medium", 13, "bold"), bg="#1DB954", anchor="center", fg="#0C0C0C")\
+            .place(x=10, y=155, height=25)
+        t_sadd = Text(f_ups, font=("Roboto", 11, "bold"))
+        t_sadd.insert(END, store[1])
+        t_sadd.place(x=10, y=190, height=100, width=400)
+
+        Button(f_ups, text="CONFIRM", font=("Roboto", 12, "bold"),
+               command=lambda: self.update_store(sid, t_sadd.get(1.0, END).replace("\n", ""), f_ups)).\
+            place(x=220, y=310, height=25, width=90)
+        Button(f_ups, text="CLEAR", font=("Roboto", 12, "bold"),
+               command=lambda: [t_sadd.delete(1.0, END), self.s_name.set("Enter store name"),
+                                t_sadd.insert(END, "Enter store address")]) \
+            .place(x=320, y=310, height=25, width=90)
+
+    def update_store(self, sid, add, f):
+        c.execute("SELECT store_name FROM STORE WHERE store_code=?", (sid,))
+        name = c.fetchone()[0]
+        if self.s_name.get() == "" or self.s_name.get() == "Enter store name:" or add == "":
+            messagebox.showerror("Error", "Please fill out all the necessary information.")
+        else:
+            if messagebox.askyesno("Update Store Details", ("Do you want to update the store details of " +
+                                                            name)):
+                c.execute("UPDATE STORE SET store_name=?, store_add=? WHERE store_code=?",
+                          (self.s_name.get(), add, sid))
+                conn.commit()
+                messagebox.showinfo("Success", ("Store details of " + name + " updated!"))
+                f.destroy()
+                self.display_store()
 
     # METHOD FOR DELETE STORE BUTTON
 
@@ -691,6 +657,67 @@ class Tracker:
             self.display_store()
             messagebox.showinfo("Success", "Store deleted from database!")
             conn.commit()
+
+    # METHOD FOR PRODUCT BUTTON IN NAVIGATION
+
+    def add_product(self):
+        w_add_prod = Toplevel()
+        w_add_prod.title("Add Product!")
+        apw = 400
+        aph = 330
+        w_add_prod.config(bg="#0c0c0c")
+        w_add_prod.geometry("{}x{}+{}+{}".format(apw, aph, int((scw - apw) / 2), int((scy - 60 - aph) / 2)))
+        w_add_prod.resizable(False, False)
+        w_add_prod.grab_set()
+        self.p_name.set("Enter product name")
+
+        Label(w_add_prod, text="Add Product", bg="#0C0C0C", fg="#1DB954", font=("Gotham Medium", 18, "bold")) \
+            .place(x=5, y=15, height=35, width=410)
+        Label(w_add_prod, text="Name: ", font=("Gotham Medium", 14, "bold"), anchor="center",
+              bg="#1DB954", fg="#0C0C0C").place(x=10, y=85, height=25, width=80)
+        pdname = Entry(w_add_prod, textvariable=self.p_name, highlightcolor="#1DB954",
+                       highlightbackground="#1DB954",
+                       font=("Roboto", 11, "bold"))
+        pdname.bind('<FocusIn>', lambda event: self.pd_focusin())
+        pdname.bind('<FocusOut>', lambda event: self.pd_focusout())
+        pdname.place(x=90, y=85, height=25, width=300)
+        Label(w_add_prod, text="Category: ", font=("Gotham Medium", 14, "bold"), anchor="center",
+              bg="#1DB954", fg="#0C0C0C").place(x=10, y=125, height=25, width=120)
+        Label(w_add_prod, text="(Please separate each category using comma)", font=("Roboto", 8), fg="#1db954",
+              bg="#0c0c0c", anchor="center").place(x=135, y=120, height=25)
+        pdcateg = Text(w_add_prod, font=("Roboto", 11, "bold"))
+        pdcateg.place(x=10, y=150, height=120, width=380)
+
+        pdcateg.insert(END, "Enter product category")
+        pdcateg.bind('<FocusIn>', lambda event, y=pdcateg.get(1.0, END).replace("\n", ""): pdcateg.delete(1.0, END)
+                     if y == "Enter product category" else "")
+
+        Button(w_add_prod, text="CONFIRM", font=("Roboto", 12, "bold"),
+               command=lambda: self.add_pd(pdcateg.get(1.0, END).replace("\n", ""), w_add_prod)) \
+            .place(x=220, y=290, width=80, height=30)
+        Button(w_add_prod, text="CLEAR", font=("Roboto", 12, "bold"),
+               command=lambda: [self.p_name.set("Enter product name"), pdcateg.delete(1.0, END)]) \
+            .place(x=310, y=290, width=80, height=30)
+
+    def add_pd(self, categ, frame):
+        if self.p_name.get() == "" or categ == "" or self.p_name.get() == "Enter product name":
+            messagebox.showerror("Error", "Please provide all the necessary information!")
+            return
+        else:
+            ctgs = categ.split(",")
+            if messagebox.askyesno("Add Product", "Are you sure you want to add the product?"):
+                try:
+                    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                    c.execute("INSERT INTO PRODUCTS VALUES(?, ?)", (code, self.p_name.get()))
+                    for ctg in ctgs:
+                        c.execute("INSERT INTO PROD_CATEGORY VALUES(?, ?)", (code, ctg.strip()))
+                    conn.commit()
+                    messagebox.showinfo("Success", "Product added to database")
+                    self.pd_focusout()
+                    frame.destroy()
+                    return
+                except sqlite3.IntegrityError:
+                    messagebox.showerror("Product code already in database!")
 
     # SOME EVENT LISTENERS
 
@@ -702,25 +729,13 @@ class Tracker:
         if self.s_name.get() == "" or self.s_name.get() == "Enter store name":
             self.s_name.set("Enter store name")
 
-    def pd_focusin(self, con):
-        if con == "1":
-            if self.p_code.get() == "Enter product code":
-                self.p_code.set("")
-        elif con == "2":
-            if self.p_name.get() == "Enter product name":
-                self.p_name.set("")
+    def pd_focusin(self):
+        if self.p_name.get() == "Enter product name":
+            self.p_name.set("")
 
-    def pd_focusout(self, z):
-        if z == "all":
-            self.p_code.set("Enter product code")
+    def pd_focusout(self):
+        if self.p_name.get() == "" or self.p_name.get() == "Enter product name":
             self.p_name.set("Enter product name")
-            self.p_price.set(0)
-        elif z == "1":
-            if self.p_code.get() == "" or self.p_code.get() == "Enter product code":
-                self.p_code.set("Enter product code")
-        elif z == "2":
-            if self.p_name.get() == "" or self.p_name.get() == "Enter product name":
-                self.p_name.set("Enter product name")
 
 
 # STARTING CODE
