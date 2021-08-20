@@ -55,6 +55,7 @@ def exit_app(app):
 def prod_view(pid, sid):
     def display_price_history():
         f_dph = Toplevel()
+        f_dph.iconbitmap(r"images\icon.ico")
         f_dph.title("Price History of " + pname)
         dphw = 350
         dphh = 290
@@ -94,6 +95,7 @@ def prod_view(pid, sid):
     f_prod = Toplevel()
     f_prod.config(bg="#0c0c0c")
     f_prod.title("Product Details of " + pname)
+    f_prod.iconbitmap(r"images\icon.ico")
     psw = 420
     psh = 300
     f_prod.geometry("{}x{}+{}+{}".format(psw, psh, int((scw - psw) / 2), int((scy - 60 - psh) / 2)))
@@ -329,6 +331,7 @@ class Tracker:
         self.s_name.set("Enter store name")
         f_addstore.resizable(False, False)
         f_addstore.config(bg="#0c0c0c")
+        f_addstore.iconbitmap(r"images\icon.ico")
         f_addstore.geometry("{}x{}+{}+{}".format(asw, ash, int((scw - asw) / 2), int((scy - 60 - ash) / 2)))
         f_addstore.grab_set()
 
@@ -380,8 +383,8 @@ class Tracker:
         f_store = Frame(c_stores)
         d_store.place(x=5, y=110, width=450, height=490)
         sy = Scrollbar(d_store, command=c_stores.yview, orient=VERTICAL)
-        sy.pack(side=RIGHT, fill=Y)
         c_stores.pack(side=LEFT)
+        sy.pack(side=RIGHT, fill=Y)
         c_stores.configure(yscrollcommand=sy.set)
         c_stores.bind('<Configure>', lambda e: c_stores.configure(scrollregion=c_stores.bbox('all')))
         c_stores.create_window((0, 0), window=f_store, anchor="nw")
@@ -427,6 +430,7 @@ class Tracker:
     def view_prod_frame(self, sid):
         f_view = Toplevel()
         f_view.title("Products")
+        f_view.iconbitmap(r"images\icon.ico")
         vpw = 450
         vph = 600
         f_view.resizable(False, False)
@@ -475,11 +479,11 @@ class Tracker:
                              highlightbackground="#1db954")
                 f_sp.propagate(0)
                 f_sp.grid(row=row, column=0, padx=5, pady=(5, 0))
-                Label(f_sp, text=pr[1], anchor='center', font=("Roboto", 17, "bold"), bg="white")\
-                    .place(x=10, y=10, height=50)
+                Label(f_sp, text=pr[1], anchor='w', font=("Roboto", 17, "bold"), bg="white")\
+                    .place(x=10, y=10, height=50, width=285)
                 sp_categ = categ_prod(pr[0])
                 Label(f_sp, text=", ".join(str(x.strip()) for x in sp_categ), anchor='sw',
-                      font=("Roboto", 9, "bold"), bg="white", fg="#1db954").place(x=10, y=60, height=20)
+                      font=("Roboto", 9, "bold"), bg="white", fg="#1db954").place(x=10, y=60, height=20, width=285)
 
                 Button(f_sp, text="Update Details", font=("Roboto", 9, "bold"), bg="#1db954", relief=GROOVE,
                        activebackground="#1db954", command=lambda x=pr[0], y=f, z=sid: self.f_up_details(x, y, z))\
@@ -503,6 +507,7 @@ class Tracker:
         udew = 400
         udeh = 280
         f_up_de.config(bg="#1db954")
+        f_up_de.iconbitmap(r"images\icon.ico")
         f_up_de.geometry("{}x{}+{}+{}".format(udew, udeh, int((scw - udew) / 2), int((scy - 60 - udeh) / 2)))
         f_up_de.resizable(False, False)
         f_up_de.grab_set()
@@ -558,6 +563,7 @@ class Tracker:
         f_up_pr.geometry("{}x{}+{}+{}".format(uprw, uprh, int((scw - uprw) / 2), int((scy - 60 - uprh) / 2)))
         f_up_pr.config(bg="#1db954")
         f_up_pr.resizable(False, False)
+        f_up_pr.iconbitmap(r"images\icon.ico")
         f_up_pr.grab_set()
 
         Label(f_up_pr, text="PRICE: ", font=("Gotham Medium", 12, "bold"), anchor="center", fg="#1DB954",
@@ -611,6 +617,7 @@ class Tracker:
         f_ups.title("Update Store Details of " + store[0])
         f_ups.geometry("{}x{}+{}+{}".format(usw, ush, int((scw - usw) / 2), int((scy - 60 - ush) / 2)))
         f_ups.grab_set()
+        f_ups.iconbitmap(r"images\icon.ico")
         f_ups.resizable(False, False)
         f_ups.config(bg="#0c0c0c")
         self.s_name.set(store[0])
@@ -668,6 +675,7 @@ class Tracker:
         w_add_prod.config(bg="#0c0c0c")
         w_add_prod.geometry("{}x{}+{}+{}".format(apw, aph, int((scw - apw) / 2), int((scy - 60 - aph) / 2)))
         w_add_prod.resizable(False, False)
+        w_add_prod.iconbitmap(r"images\icon.ico")
         w_add_prod.grab_set()
         self.p_name.set("Enter product name")
 
@@ -749,6 +757,7 @@ h = 680
 root.geometry("{}x{}+{}+{}".format(w, h, int((scw - w) / 2), int((scy - 60 - h) / 2)))
 root.resizable(False, False)
 root.config(bg="#0C0C0C")
+root.iconbitmap(r"images\icon.ico")
 root.protocol("WM_DELETE_WINDOW", lambda: exit_app(root))
 obj = Tracker(root)
 root.mainloop()
