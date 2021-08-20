@@ -381,11 +381,12 @@ class Tracker:
         d_store = Frame(self.f_store)
         c_stores = Canvas(d_store, width=440, height=480)
         f_store = Frame(c_stores)
-        d_store.place(x=5, y=110, width=450, height=490)
         sy = Scrollbar(d_store, command=c_stores.yview, orient=VERTICAL)
-        c_stores.pack(side=LEFT)
-        sy.pack(side=RIGHT, fill=Y)
+
+        d_store.place(x=5, y=110, width=450, height=490)
         c_stores.configure(yscrollcommand=sy.set)
+        sy.pack(side=RIGHT, fill=Y)
+        c_stores.pack(side=LEFT)
         c_stores.bind('<Configure>', lambda e: c_stores.configure(scrollregion=c_stores.bbox('all')))
         c_stores.create_window((0, 0), window=f_store, anchor="nw")
 
