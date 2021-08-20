@@ -278,8 +278,8 @@ class Tracker:
                         f_pd.grid(row=row, column=count % 2, padx=3, pady=(5, 0))
                         c.execute("SELECT prodd_name FROM PRODUCTS WHERE prod_code=?", (prod[0],))
                         name = c.fetchone()[0]
-                        pname = Label(f_pd, text=name, font=("Roboto", 14, "bold"), bg="white", anchor="center")
-                        pname.place(x=5, y=5, height=40, width=190)
+                        pname = Label(f_pd, text=name, font=("Roboto", 14, "bold"), bg="white", anchor="nw")
+                        pname.place(x=5, y=20, height=30, width=190)
                         c.execute("SELECT store_name FROM STORE WHERE store_code=?", (p[2],))
                         det_store = c.fetchone()
                         store = Label(f_pd, image=self.loc_img, text=(" " + det_store[0]), font=("Roboto", 8, "bold"),
