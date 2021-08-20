@@ -55,7 +55,6 @@ def exit_app(app):
 def prod_view(pid, sid):
     def display_price_history():
         f_dph = Toplevel()
-        f_dph.iconbitmap(r"images\icon.ico")
         f_dph.title("Price History of " + pname)
         dphw = 350
         dphh = 290
@@ -63,6 +62,7 @@ def prod_view(pid, sid):
         f_dph.resizable(False, False)
         f_dph.geometry("{}x{}+{}+{}".format(dphw, dphh, int((scw - dphw) / 2), int((scy - 60 - dphh) / 2)))
         f_dph.grab_set()
+        f_dph.iconbitmap(r"images\icon.ico")
 
         f_table = Frame(f_dph)
         f_table.place(x=0, y=0, height=dphh, width=dphw)
@@ -95,12 +95,12 @@ def prod_view(pid, sid):
     f_prod = Toplevel()
     f_prod.config(bg="#0c0c0c")
     f_prod.title("Product Details of " + pname)
-    f_prod.iconbitmap(r"images\icon.ico")
     psw = 420
     psh = 300
     f_prod.geometry("{}x{}+{}+{}".format(psw, psh, int((scw - psw) / 2), int((scy - 60 - psh) / 2)))
     f_prod.resizable(False, False)
     f_prod.grab_set()
+    f_prod.iconbitmap(r"images\icon.ico")
 
     i_name = PhotoImage(file=r"images/spprod.png").subsample(2, 2)
     i_categ = PhotoImage(file=r"images/spcateg.png").subsample(2, 2)
@@ -331,9 +331,9 @@ class Tracker:
         self.s_name.set("Enter store name")
         f_addstore.resizable(False, False)
         f_addstore.config(bg="#0c0c0c")
-        f_addstore.iconbitmap(r"images\icon.ico")
         f_addstore.geometry("{}x{}+{}+{}".format(asw, ash, int((scw - asw) / 2), int((scy - 60 - ash) / 2)))
         f_addstore.grab_set()
+        f_addstore.iconbitmap(r"images\icon.ico")
 
         Label(f_addstore, text="ADD STORE", font=("Gotham Medium", 20, "bold"), anchor="center",
               fg="#1DB954", bg="#0C0C0C").\
@@ -430,13 +430,13 @@ class Tracker:
     def view_prod_frame(self, sid):
         f_view = Toplevel()
         f_view.title("Products")
-        f_view.iconbitmap(r"images\icon.ico")
         vpw = 450
         vph = 600
         f_view.resizable(False, False)
         f_view.config(bg="#1db954")
         f_view.geometry("{}x{}+{}+{}".format(vpw, vph, int((scw - vpw) / 2), int((scy - 60 - vph) / 2)))
         f_view.grab_set()
+        f_view.iconbitmap(r"images\icon.ico")
 
         bsearch_img = PhotoImage(file=r"images/blacksearch.png")
         Entry(f_view, textvariable=self.vp_search, font=("Roboto", 14, "bold"), highlightcolor="black")\
@@ -507,10 +507,10 @@ class Tracker:
         udew = 400
         udeh = 280
         f_up_de.config(bg="#1db954")
-        f_up_de.iconbitmap(r"images\icon.ico")
         f_up_de.geometry("{}x{}+{}+{}".format(udew, udeh, int((scw - udew) / 2), int((scy - 60 - udeh) / 2)))
         f_up_de.resizable(False, False)
         f_up_de.grab_set()
+        f_up_de.iconbitmap(r"images\icon.ico")
 
         self.p_name.set(name)
         c.execute("SELECT prod_categ FROM PROD_CATEGORY WHERE prod_code=?", (pid,))
@@ -563,8 +563,8 @@ class Tracker:
         f_up_pr.geometry("{}x{}+{}+{}".format(uprw, uprh, int((scw - uprw) / 2), int((scy - 60 - uprh) / 2)))
         f_up_pr.config(bg="#1db954")
         f_up_pr.resizable(False, False)
-        f_up_pr.iconbitmap(r"images\icon.ico")
         f_up_pr.grab_set()
+        f_up_pr.iconbitmap(r"images\icon.ico")
 
         Label(f_up_pr, text="PRICE: ", font=("Gotham Medium", 12, "bold"), anchor="center", fg="#1DB954",
               bg="#0C0C0C").place(x=10, y=20, height=25, width=80)
@@ -617,9 +617,9 @@ class Tracker:
         f_ups.title("Update Store Details of " + store[0])
         f_ups.geometry("{}x{}+{}+{}".format(usw, ush, int((scw - usw) / 2), int((scy - 60 - ush) / 2)))
         f_ups.grab_set()
-        f_ups.iconbitmap(r"images\icon.ico")
         f_ups.resizable(False, False)
         f_ups.config(bg="#0c0c0c")
+        f_ups.iconbitmap(r"images\icon.ico")
         self.s_name.set(store[0])
 
         Label(f_ups, text="UPDATE STORE", font=("Gotham Medium", 20, "bold"), anchor="center", fg="#1DB954",
@@ -675,8 +675,8 @@ class Tracker:
         w_add_prod.config(bg="#0c0c0c")
         w_add_prod.geometry("{}x{}+{}+{}".format(apw, aph, int((scw - apw) / 2), int((scy - 60 - aph) / 2)))
         w_add_prod.resizable(False, False)
-        w_add_prod.iconbitmap(r"images\icon.ico")
         w_add_prod.grab_set()
+        w_add_prod.iconbitmap(r"images\icon.ico")
         self.p_name.set("Enter product name")
 
         Label(w_add_prod, text="Add Product", bg="#0C0C0C", fg="#1DB954", font=("Gotham Medium", 18, "bold")) \
