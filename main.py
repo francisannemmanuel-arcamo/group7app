@@ -85,8 +85,8 @@ def prod_view(pid, sid):
         ph = c.fetchall()
         t_ph.delete(*t_ph.get_children())
         for hp in ph:
-            date = datetime.strptime(hp[1], '%Y-%m-%d %H:%M:%S.%f')
-            t_ph.insert('', 0, values=(("Php " + "{:.2f}".format(round(hp[0], 2))),
+            date = datetime.strptime(hp[1], '%Y-%m-%d %H:%M:%S')
+            t_ph.insert('', 0, values=(("Php " + '{:,.2f}'.format(round(hp[0], 2))),
                                        date.strftime('%I:%M %p - %a, %b %d %Y')))
 
     c.execute("SELECT prodd_name FROM PRODUCTS WHERE prod_code=?", (pid,))
@@ -117,7 +117,7 @@ def prod_view(pid, sid):
     categ.place(x=10, y=75, height=40)
     c.execute("SELECT price, MAX(date_modified) AS date_modified FROM PRODUCT_PRICE WHERE prod_code=? AND "
               "store_code=?", (pid, sid))
-    price = Label(f_prod, text=("    Php " + "{:.2f}".format(round(c.fetchone()[0], 2))), compound="left",
+    price = Label(f_prod, text=("    Php " + '{:,.2f}'.format(round(c.fetchone()[0], 2))), compound="left",
                   font=("Roboto", 12, "bold"), fg="#EC9D46", bg="#0c0c0c", image=i_price, anchor="sw")
     price.img = i_price
     price.place(x=10, y=120, height=40)
@@ -272,7 +272,7 @@ class Tracker:
                         f_pd = Frame(res_frame, highlightthickness=1, height=150, width=210, bg="white",
                                      highlightbackground="#1db954")
                         f_pd.propagate(0)
-                        pprice = Label(f_pd, text=("Php " + "{:.2f}".format(round(p[0], 2))), anchor="sw",
+                        pprice = Label(f_pd, text=("Php " + '{:,.2f}'.format(round(p[0], 2))), anchor="sw",
                                        font=("Roboto", 10, "bold"), bg="white", fg="orange")
                         pprice.place(x=15, y=65, height=40, width=180)
                         f_pd.grid(row=row, column=count % 2, padx=3, pady=(5, 0))
@@ -575,8 +575,9 @@ class Tracker:
         try:
             if self.p_price.get() > 0:
                 if messagebox.askyesno("Update Price", "Are you sure you want to update the price?"):
+                    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     c.execute("INSERT INTO PRODUCT_PRICE VALUES(?, ?, ?, ?)",
-                              (s, p, self.p_price.get(), datetime.now()))
+                              (s, p, self.p_price.get(), date))
                     conn.commit()
                     self.p_price.set(0)
                     top.destroy()
