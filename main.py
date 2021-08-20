@@ -93,13 +93,13 @@ def prod_view(pid, sid):
     c.execute("SELECT prodd_name FROM PRODUCTS WHERE prod_code=?", (pid,))
     pname = c.fetchone()[0]
     f_prod = Toplevel()
-    f_prod.config(bg="#0c0c0c")
     f_prod.title("Product Details of " + pname)
     psw = 420
     psh = 300
     f_prod.geometry("{}x{}+{}+{}".format(psw, psh, int((scw - psw) / 2), int((scy - 60 - psh) / 2)))
     f_prod.resizable(False, False)
     f_prod.grab_set()
+    f_prod.config(bg="#0c0c0c")
     f_prod.iconbitmap(r"images\icon.ico")
 
     i_name = PhotoImage(file=r"images/spprod.png").subsample(2, 2)
